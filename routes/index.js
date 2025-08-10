@@ -169,7 +169,7 @@ router.get('/Users', async (req, res) => {
           PhoneNumber:phoneNumber,
           traineesNumber:Number(traineesNumber),
           Description:description,
-          FirstLoggin:Number(1),
+          FirstLoggin:1,
           UserId:userId,
           role:Number(role)
         });
