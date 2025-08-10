@@ -169,7 +169,7 @@ router.get('/Users', async (req, res) => {
           PhoneNumber:phoneNumber,
           traineesNumber:Number(traineesNumber),
           Description:description,
-          FirstLoggin:Number(firstLoggin),
+          FirstLoggin:Number(1),
           UserId:userId,
           role:Number(role)
         });
@@ -712,7 +712,10 @@ router.post('/deleteMeasurement', async (req, res) => {
 
 router.post('/changePassword', async (req, res) => {
   const { email, newPassword,Userid } = req.body;
-
+//print the email and newPassword
+  console.log('Email:', email);
+  console.log('New Password:', newPassword);
+  console.log('Userid:', Userid);
 
   if (!email || !newPassword) {
     return res.status(400).json({ message: 'Missing email or new password' });
