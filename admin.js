@@ -4,12 +4,14 @@ const { buffer } = require('stream/consumers');
 require('dotenv').config();
 
 const serviceAccount = JSON.parse(
-//  Buffer.from("", 'base64').toString('utf-8')
   Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64, 'base64').toString('utf-8')
 );
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  // credential: admin.credential.cert(serviceAccount)
+  credential: serviceAccount
+      ? admin.credential.cert(serviceAccount)
+      : admin.credential.applicationDefault(), // will work only on GCP
 });
 
 const Authentication = admin.auth();
