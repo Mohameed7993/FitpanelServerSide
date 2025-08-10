@@ -767,29 +767,71 @@ router.get('/getTrainerDetails', async (req, res) => {
 });
 
 
+// router.post('/deleteTrainer', async (req, res) => {
+//     const { TrainerId, email } = req.body;
+ 
+//     try {
+//       // Step 1: Delete Firestore document
+//       await deleteDoc(doc(db, 'Users', TrainerId));
+  
+//       // Step 2: Get UID by email and delete from Auth
+//       try {
+//         const userRecord = await Authentication.getUserByEmail(email);
+//         await Authentication.deleteUser(userRecord.uid);
+//       } catch (authError) {
+//         console.warn(`⚠️ Could not delete auth user with email ${email}:`, Authentication.message);
+//       }
+  
+  
+//       res.status(200).json({ message: 'Trainner deleted successfully' });
+//     } catch (error) {
+//       console.error('❌ Error deleting Trainner:', error);
+//       res.status(500).json({ message: 'Internal Server Error' });
+//     }
+//   });
 router.post('/deleteTrainer', async (req, res) => {
+  try {
     const { TrainerId, email } = req.body;
-    console.log(TrainerId)
-    console.log(email)
-    try {
-      // Step 1: Delete Firestore document
-      await deleteDoc(doc(db, 'Users', TrainerId));
-  
-      // Step 2: Get UID by email and delete from Auth
-      try {
-        const userRecord = await Authentication.getUserByEmail(email);
-        await Authentication.deleteUser(userRecord.uid);
-      } catch (authError) {
-        console.warn(`⚠️ Could not delete auth user with email ${email}:`, Authentication.message);
-      }
-  
-  
-      res.status(200).json({ message: 'Trainner deleted successfully' });
-    } catch (error) {
-      console.error('❌ Error deleting Trainner:', error);
-      res.status(500).json({ message: 'Internal Server Error' });
+    if (!TrainerId || !email) {
+      return res.status(400).json({ message: 'TrainerId and email are required' });
     }
-  });
+
+    // 1) Find user by email in Auth
+    let userRecord;
+    try {
+      userRecord = await Authentication.getUserByEmail(email);
+    } catch (err) {
+      // If no such user, report clearly and stop
+      if (err.code === 'auth/user-not-found') {
+        return res.status(404).json({ message: `No auth user found for email: ${email}` });
+      }
+      console.error('Error getUserByEmail:', err);
+      return res.status(500).json({ message: 'Failed to query auth user', error: err.message });
+    }
+
+    // 2) Delete Auth user
+    try {
+      await Authentication.deleteUser(userRecord.uid);
+    } catch (err) {
+      console.error('Error deleteUser:', err);
+      return res.status(500).json({ message: 'Failed to delete auth user', error: err.message });
+    }
+
+    // 3) Delete Firestore doc (use Admin Firestore to ensure same project)
+    try {
+      await dtabase.doc(`Users/${TrainerId}`).delete();
+    } catch (err) {
+      console.error('Error deleting Firestore doc:', err);
+      // Optionally: you might want to re-create the auth user here, or at least report partial deletion
+      return res.status(500).json({ message: 'Auth deleted, but Firestore delete failed', error: err.message });
+    }
+
+    return res.status(200).json({ message: 'Trainer deleted from Auth and Firestore successfully' });
+  } catch (err) {
+    console.error('Unexpected error in /deleteTrainer:', err);
+    return res.status(500).json({ message: 'Internal Server Error', error: err.message });
+  }
+});
 
 
 
